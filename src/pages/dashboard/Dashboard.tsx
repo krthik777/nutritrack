@@ -8,6 +8,7 @@ import {
   User,
   Settings,
   Apple,
+  LogOut,
 } from 'lucide-react';
 import { DashboardCont } from './components/Dashboardcont';
 import { ScanFood } from './components/ScanFood';
@@ -16,9 +17,11 @@ import { Allergens } from './components/Allergens';
 import { AIChat } from './components/AIChat';
 import { Profile } from './components/Profile';
 import { Settings as SettingsPage } from './components/Settings';
+import { useAuthStore } from '../../store/authStore'; // Import the auth store
 
 function Dashboard() {
   const [selectedTab, setSelectedTab] = useState('dashboard');
+  const { signOut } = useAuthStore(); // Access the signOut function
 
   const nutritionSummary = {
     calories: 1330,
@@ -56,9 +59,9 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 p-6">
+      <aside className="w-64 bg-white border-r border-gray-200 p-6 fixed inset-y-0">
         <div className="flex items-center gap-2 mb-8">
           <Apple className="h-8 w-8 text-green-600" />
           <h1 className="text-2xl font-bold text-gray-800">NutriTrack</h1>
@@ -87,11 +90,22 @@ function Dashboard() {
               <span className="font-medium">{item.label}</span>
             </button>
           ))}
+
+          {/* Sign Out Button */}
+          <div className="absolute bottom-6 w-full px-6">
+            <button
+              onClick={signOut}
+              className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="font-medium">Sign Out</span>
+            </button>
+          </div>
         </nav>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <header className="mb-8">
