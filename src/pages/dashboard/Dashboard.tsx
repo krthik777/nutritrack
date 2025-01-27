@@ -21,6 +21,7 @@ import { useAuthStore } from '../../store/authStore'; // Import the auth store
 
 function Dashboard() {
   const [selectedTab, setSelectedTab] = useState('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state to handle sidebar visibility
   const { signOut } = useAuthStore(); // Access the signOut function
 
   const nutritionSummary = {
@@ -59,32 +60,46 @@ function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col md:flex-row">
+      {/* Mobile Hamburger Button */}
+      <div className="md:hidden flex items-center p-4">
+        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="text-gray-600">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 p-6 fixed inset-y-0">
+      <aside className={`w-64 bg-white border-r border-gray-200 p-6 fixed inset-y-0 md:relative md:block transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center gap-2 mb-8">
           <Apple className="h-8 w-8 text-green-600" />
           <h1 className="text-2xl font-bold text-gray-800">NutriTrack</h1>
         </div>
-        
+
+        {/* Close Button for Sidebar on Mobile */}
+        <div className="md:hidden absolute top-4 right-4">
+          <button onClick={() => setIsSidebarOpen(false)} className="text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
         <nav className="space-y-2">
-          {[
+          {[ 
             { icon: BarChart3, label: 'Dashboard', id: 'dashboard' },
             { icon: Camera, label: 'Scan Food', id: 'scan' },
             { icon: Calendar, label: 'Meal Planner', id: 'planner' },
             { icon: AlertCircle, label: 'Allergens', id: 'allergens' },
             { icon: MessageSquare, label: 'AI Chat', id: 'chat' },
             { icon: User, label: 'Profile', id: 'profile' },
-            { icon: Settings, label: 'Settings', id: 'settings' },
+            { icon: Settings, label: 'Settings', id: 'settings' }
           ].map((item) => (
             <button
               key={item.id}
               onClick={() => setSelectedTab(item.id)}
-              className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg ${
-                selectedTab === item.id
-                  ? 'bg-green-50 text-green-600'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg ${selectedTab === item.id ? 'bg-green-50 text-green-600' : 'text-gray-600 hover:bg-gray-50'}`}
             >
               <item.icon className="h-5 w-5" />
               <span className="font-medium">{item.label}</span>
@@ -105,7 +120,7 @@ function Dashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main className={`flex-1 p-8 overflow-y-auto transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <header className="mb-8">
