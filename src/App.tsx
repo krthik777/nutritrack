@@ -8,6 +8,7 @@ import { useAuthStore } from './store/authStore';
 
 function App() {
   const { initialize } = useAuthStore();
+  
 
   useEffect(() => {
     initialize();

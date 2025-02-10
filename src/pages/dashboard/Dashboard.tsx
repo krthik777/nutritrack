@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { DashboardCont } from "./components/Dashboardcont";
 import { ScanFood } from "./components/ScanFood";
-import { MealPlanner } from "./components/MealPlanner";
+import  MealPlanner  from "./components/MealPlanner";
 import { Allergens } from "./components/Allergens";
 import { AIChat } from "./components/AIChat";
 import { Profile } from "./components/Profile";
@@ -191,14 +191,14 @@ function Dashboard() {
       >
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <header className="mb-8">
+          {/* <header className="mb-8">
             <h2 className="text-3xl font-bold text-gray-800">
               Welcome back, Alex!
             </h2>
             <p className="text-gray-600">
               Track your nutrition and stay healthy
             </p>
-          </header>
+          </header> */}
 
           {renderContent()}
         </div>
