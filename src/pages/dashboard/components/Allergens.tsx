@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AlertCircle, Search, Plus, X } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export function Allergens() {
   const [allergens, setAllergens] = useState([
@@ -31,10 +32,26 @@ export function Allergens() {
     setAllergens(prev => [...prev, { id: crypto.randomUUID(), ...newAllergen }]);
     setNewAllergen({ name: '', severity: 'Medium', notes: '' });
     setIsDialogOpen(false);
+
+    // Success alert
+    Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: 'Allergen added successfully!',
+      confirmButtonText: 'OK',
+    });
   };
 
   const handleRemoveAllergen = (id: string) => {
     setAllergens(prev => prev.filter(allergen => allergen.id !== id));
+
+    // Success alert
+    Swal.fire({
+      icon: 'success',
+      title: 'Removed',
+      text: 'Allergen removed successfully!',
+      confirmButtonText: 'OK',
+    });
   };
 
   const handleCommonAllergenClick = (name: string) => {
@@ -61,6 +78,14 @@ export function Allergens() {
     setCommonAllergenSeverity('Medium');
     setCommonAllergenNotes('');
     setIsSeverityDialogOpen(false);
+
+    // Success alert
+    Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: 'Common allergen added successfully!',
+      confirmButtonText: 'OK',
+    });
   };
 
   return (
