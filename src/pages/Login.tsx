@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Salad } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
-import Particles from 'react-tsparticles';
-import { loadFull } from 'tsparticles';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -14,13 +12,13 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
+      localStorage.setItem('userEmail', email);
       navigate('/dashboard');
     }
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       if (isLogin) {
         await signIn(email, password);
@@ -32,88 +30,9 @@ const Login = () => {
     }
   };
 
-  // Particle.js options
-  const particlesInit = async (engine: any) => {
-    await loadFull(engine);
-  };
-
-  const particleOptions = {
-    background: {
-      color: {
-        value: '#f9fafb', // Light gray background
-      },
-    },
-    fpsLimit: 60,
-    interactivity: {
-      events: {
-        onHover: {
-          enable: true,
-          mode: 'repulse',
-        },
-        resize: true,
-      },
-      modes: {
-        repulse: {
-          distance: 100,
-        },
-      },
-    },
-    particles: {
-      color: {
-        value: '#00ff00', // Green particles
-      },
-      links: {
-        color: '#00ff00',
-        distance: 150,
-        enable: true,
-        opacity: 0.5,
-        width: 1,
-      },
-      collisions: {
-        enable: true,
-      },
-      move: {
-        direction: 'none' as const,
-        enable: true,
-        outModes: {
-          default: 'bounce' as const,
-        },
-        random: false,
-        speed: 2,
-        straight: false,
-      },
-      number: {
-        density: {
-          enable: true,
-          area: 800,
-        },
-        value: 80,
-      },
-      opacity: {
-        value: 0.5,
-      },
-      shape: {
-        type: 'circle',
-      },
-      size: {
-        value: { min: 1, max: 5 },
-      },
-    },
-    detectRetina: true,
-  };
-
   return (
-    <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* Particles Background */}
-      <Particles
-        id="tsparticles"
-        init={particlesInit}
-        options={particleOptions}
-        className="absolute inset-0 z-0"
-      />
-
-      {/* Login Form */}
-      <div className="relative z-10 sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-100">
+      <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Salad className="h-12 w-12 text-green-600" />
         </div>
@@ -122,12 +41,12 @@ const Login = () => {
         </h2>
       </div>
 
-      <div className="relative z-10 mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="relative mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
               <div className="bg-red-50 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                <span className="block sm:inline">{error}</span>
+                {error}
               </div>
             )}
 
@@ -185,9 +104,7 @@ const Login = () => {
               className="w-full text-center text-sm text-gray-600 hover:text-gray-900"
               disabled={loading}
             >
-              {isLogin
-                ? "Don't have an account? Sign up"
-                : 'Already have an account? Sign in'}
+              {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
             </button>
           </div>
         </div>
