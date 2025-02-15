@@ -16,7 +16,7 @@ export function ScanFood() {
     form.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/scanfood', form, {
+      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/scanfood', form, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
