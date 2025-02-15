@@ -1,97 +1,161 @@
-import { User, Mail, Phone, MapPin, Edit2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Save, Plus } from 'lucide-react';
+
+interface ProfileData {
+  _id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  height: string;
+  weight: string;
+  goals: string[];
+  dietaryPreferences: string[];
+}
 
 export function Profile() {
-  const profile = {
-    name: 'Alex Johnson',
-    email: 'alex@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    height: '5\'10"',
-    weight: '160 lbs',
-    goals: ['Lose weight', 'Build muscle', 'Improve energy'],
-    dietaryPreferences: ['Vegetarian', 'Low-carb'],
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [newGoal, setNewGoal] = useState('');
+  const [newPreference, setNewPreference] = useState('');
+  const email = localStorage.getItem('email');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!email) return;
+      try {
+        const response = await fetch(`https://backend-production-d4c8.up.railway.app/api/profile?email=${email}`);
+        const data = await response.json();
+        if (data) setProfile(data);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+    fetchProfile();
+  }, [email]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profile) return;
+    try {
+      const response = await fetch('https://backend-production-d4c8.up.railway.app/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...profile, email }),
+      });
+      if (response.ok) setIsEditing(false);
+    } catch (error) {
+      console.error('Error saving profile:', error);
+    }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex items-center gap-6">
-            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-              <User className="h-12 w-12 text-green-600" />
+  const handleAddGoal = () => {
+    if (newGoal.trim()) {
+      setProfile(prev => prev ? { ...prev, goals: [...prev.goals, newGoal.trim()] } : prev);
+      setNewGoal('');
+    }
+  };
+
+  const handleAddPreference = () => {
+    if (newPreference.trim()) {
+      setProfile(prev => prev ? { ...prev, dietaryPreferences: [...prev.dietaryPreferences, newPreference.trim()] } : prev);
+      setNewPreference('');
+    }
+  };
+
+  if (!profile || isEditing) {
+    return (
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
+        <div className="flex items-center gap-6 mb-8">
+          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+            <User className="h-12 w-12 text-green-600" />
+          </div>
+          <h3 className="text-2xl font-semibold text-gray-800">
+            {profile ? 'Edit Profile' : 'Create Profile'}
+          </h3>
+        </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {['name', 'phone', 'location', 'height', 'weight'].map(field => (
+            <div key={field}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+              <input
+                type="text"
+                value={profile?.[field as keyof ProfileData] || ''}
+                onChange={e => setProfile(prev => prev ? { ...prev, [field]: e.target.value } : prev)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                required
+              />
             </div>
-            <div>
-              <h3 className="text-2xl font-semibold text-gray-800">{profile.name}</h3>
-              <p className="text-gray-600">Premium Member</p>
+          ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+            <input
+              type="text"
+              value={email || ''}
+              disabled
+              className="w-full px-4 py-2 border rounded-lg bg-gray-200 cursor-not-allowed"
+            />
+          </div>
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Goals</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newGoal}
+                onChange={e => setNewGoal(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              />
+              <button type="button" onClick={handleAddGoal} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <Plus className="h-5 w-5 inline" />
+              </button>
             </div>
           </div>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <Edit2 className="h-5 w-5" />
-            Edit Profile
+          <div className="col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Dietary Preferences</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPreference}
+                onChange={e => setNewPreference(e.target.value)}
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              />
+              <button type="button" onClick={handleAddPreference} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <Plus className="h-5 w-5 inline" />
+              </button>
+            </div>
+          </div>
+          <button type="submit" className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+            <Save className="h-5 w-5 inline" /> {profile ? 'Save Changes' : 'Create Profile'}
           </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h4 className="text-lg font-medium text-gray-800 mb-4">Contact Information</h4>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Mail className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">{profile.email}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Phone className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">{profile.phone}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">{profile.location}</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h4 className="text-lg font-medium text-gray-800 mb-4">Physical Information</h4>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Height</p>
-                <p className="text-lg font-medium text-gray-800">{profile.height}</p>
-              </div>
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="text-sm text-gray-600">Weight</p>
-                <p className="text-lg font-medium text-gray-800">{profile.weight}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        </form>
       </div>
+    );
+  }
 
+  return (
+    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
+      <div className="flex items-center gap-6 mb-8">
+        <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+          <User className="h-12 w-12 text-green-600" />
+        </div>
+        <h3 className="text-2xl font-semibold text-gray-800">Profile</h3>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="text-lg font-medium text-gray-800 mb-4">Health Goals</h4>
-          <div className="space-y-2">
-            {profile.goals.map((goal) => (
-              <div key={goal} className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full" />
-                <span className="text-gray-700">{goal}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h4 className="text-lg font-medium text-gray-800 mb-4">Dietary Preferences</h4>
-          <div className="flex flex-wrap gap-2">
-            {profile.dietaryPreferences.map((pref) => (
-              <span
-                key={pref}
-                className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-              >
-                {pref}
-              </span>
-            ))}
-          </div>
-        </div>
+        {Object.entries(profile).map(([key, value]) => (
+          key !== '_id' && (
+            <div key={key}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {key.charAt(0).toUpperCase() + key.slice(1)}
+              </label>
+              <p className="text-gray-700">{Array.isArray(value) ? value.join(', ') : value}</p>
+            </div>
+          )
+        ))}
+      </div>
+      <div className="mt-8 flex justify-end">
+        <button onClick={() => setIsEditing(true)} className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+          <Save className="h-5 w-5 inline" /> Edit Profile
+        </button>
       </div>
     </div>
   );

@@ -1,18 +1,9 @@
-import React, { useState } from "react";
-import {
-  BarChart3,
-  Camera,
-  Calendar,
-  AlertCircle,
-  MessageSquare,
-  User,
-  Settings,
-  Apple,
-  LogOut,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { BarChart3, Camera, Calendar, AlertCircle, MessageSquare, User, Settings, Apple, LogOut } from "lucide-react";
 import { DashboardCont } from "./components/Dashboardcont";
 import { ScanFood } from "./components/ScanFood";
-import  MealPlanner  from "./components/MealPlanner";
+import MealPlanner from "./components/MealPlanner";
 import { Allergens } from "./components/Allergens";
 import { AIChat } from "./components/AIChat";
 import { Profile } from "./components/Profile";
@@ -23,6 +14,8 @@ function Dashboard() {
   const [selectedTab, setSelectedTab] = useState("dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state to handle sidebar visibility
   const { signOut } = useAuthStore(); // Access the signOut function
+  const navigate = useNavigate(); // Initialize useNavigate
+  const [hasDetails, setHasDetails] = useState(false);
 
   const nutritionSummary = {
     calories: 1330,
@@ -56,7 +49,32 @@ function Dashboard() {
     },
   ];
 
+  const checkProfileDetails = async () => {
+    try {
+      const email = localStorage.getItem("email"); // Retrieve the email from localStorage
+      if(!email) {
+        navigate("/login"); // Redirect to login if email doesn't exist
+      }
+      const response = await fetch(`https://backend-production-d4c8.up.railway.app/api/hasdetails?email=${email}`);
+      const result = await response.json();
+      setHasDetails(result.exists);
+      // if (!result.exists) {
+      //   navigate("/profile"); // Redirect to profile if details don't exist
+      // }
+    } catch (error) {
+      console.error("Failed to check profile details:", error);
+    }
+  };
+
+  useEffect(() => {
+    checkProfileDetails();
+  }, []); 
+
   const renderContent = () => {
+    if (!hasDetails) {
+      return <Profile />;
+    }
+
     switch (selectedTab) {
       case "dashboard":
         return (

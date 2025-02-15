@@ -12,7 +12,7 @@ const Login = () => {
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('userEmail', email);
+      localStorage.setItem('email', email);
       navigate('/dashboard');
     }
   }, [user, navigate]);
