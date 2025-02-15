@@ -39,14 +39,27 @@ export function ScanFood() {
       const file = e.target.files[0];
       if (file) {
         setIsUploading(true);
-        const uploadResponse = await uploadFile(file);
 
-        if (uploadResponse.url) {
-          setPhotoUrl(uploadResponse.url);
-          await estimateCalories(uploadResponse.url); // Estimate calories after upload
-        } else {
-          console.error(uploadResponse.error);
-        }
+        // Convert the file to a base64 string for preview
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64Image = event.target?.result as string;
+
+          // Set the photo URL for preview
+          setPhotoUrl(base64Image);
+
+          // Upload the file to the backend (envs.sh)
+          const uploadResponse = await uploadFile(file);
+
+          if (uploadResponse.url) {
+            // Estimate calories using the public URL
+            await estimateCalories(uploadResponse.url);
+          } else {
+            console.error(uploadResponse.error);
+          }
+        };
+        reader.readAsDataURL(file);
+
         setIsUploading(false);
       }
     }
@@ -59,20 +72,24 @@ export function ScanFood() {
       if (imageSrc) {
         setIsUploading(true);
 
-        // Convert the base64 image to a Blob
+        // Set the photo URL for preview
+        setPhotoUrl(imageSrc);
+
+        // Convert the base64 image to a Blob for upload
         const byteArray = new Uint8Array(atob(imageSrc.split(',')[1]).split('').map(char => char.charCodeAt(0)));
         const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
-        // Upload the Blob to the backend
+        // Upload the Blob to the backend (envs.sh)
         const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
         const uploadResponse = await uploadFile(file);
 
         if (uploadResponse.url) {
-          setPhotoUrl(uploadResponse.url);
-          await estimateCalories(uploadResponse.url); // Estimate calories after upload
+          // Estimate calories using the public URL
+          await estimateCalories(uploadResponse.url);
         } else {
           console.error(uploadResponse.error);
         }
+
         setIsUploading(false);
       }
     }
@@ -82,26 +99,35 @@ export function ScanFood() {
   const estimateCalories = async (imageUrl: string) => {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  
+      // Ensure the image URL is valid
+      if (!imageUrl.startsWith('https://')) {
+        throw new Error('Invalid image URL');
+      }
+  
+      // Send the image URL to Gemini within the text field
+      alert(imageUrl);
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           contents: [
             {
               parts: [
                 {
-                  text: `Estimate the calories in this food image: ${imageUrl}`,
+                  text: `Imagine that you are a nutritionist with great knowledge of food items and their calorie values. Analyze this image: ${imageUrl} identify the food dish and return its calorie value and how much serving should be made in one meal as per the WHO standards. If it is not a food or if the image is not clear, return an error.`,
                 },
               ],
             },
           ],
         }
       );
-
+  
       // Extract the calorie estimation from the response
       const calorieText = response.data.candidates[0].content.parts[0].text;
       setCalorieEstimation(calorieText);
     } catch (error) {
       console.error('Error estimating calories', error);
+      setCalorieEstimation('Error: Unable to estimate calories. Please try again.');
     }
   };
 
