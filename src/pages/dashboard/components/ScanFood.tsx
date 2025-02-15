@@ -1,14 +1,37 @@
 import { Camera, Upload } from 'lucide-react';
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import Webcam from 'react-webcam'; // Use ES6 import here
+import Webcam from 'react-webcam';
 
-// This is the main ScanFood component
 export function ScanFood() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const cameraRef = useRef<any>(null);  // Ref to access camera component
+  const [calorieEstimation, setCalorieEstimation] = useState<string | null>(null);
+  const cameraRef = useRef<any>(null);
+
+  // Upload file to backend
+  const uploadFile = async (file: File | Blob) => {
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/scanfood', form, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.status !== 200) {
+        return { error: 'Error uploading file' };
+      } else {
+        return { url: response.data.url }; // URL returned by the backend
+      }
+    } catch (error) {
+      console.error(error);
+      return { error: 'Error uploading file' };
+    }
+  };
 
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -16,24 +39,15 @@ export function ScanFood() {
       const file = e.target.files[0];
       if (file) {
         setIsUploading(true);
-        const formData = new FormData();
-        formData.append('file', file);
+        const uploadResponse = await uploadFile(file);
 
-        try {
-          // Upload the file to envs.sh
-          const response = await axios.post('https://envs.sh', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
-
-          // envs.sh returns a URL for the uploaded file
-          setPhotoUrl(response.data.url);
-        } catch (error) {
-          console.error('Error uploading file', error);
-        } finally {
-          setIsUploading(false);
+        if (uploadResponse.url) {
+          setPhotoUrl(uploadResponse.url);
+          await estimateCalories(uploadResponse.url); // Estimate calories after upload
+        } else {
+          console.error(uploadResponse.error);
         }
+        setIsUploading(false);
       }
     }
   };
@@ -44,30 +58,50 @@ export function ScanFood() {
       const imageSrc = cameraRef.current.getScreenshot();
       if (imageSrc) {
         setIsUploading(true);
-        
-        // Convert the base64 image to a Blob before uploading
+
+        // Convert the base64 image to a Blob
         const byteArray = new Uint8Array(atob(imageSrc.split(',')[1]).split('').map(char => char.charCodeAt(0)));
         const blob = new Blob([byteArray], { type: 'image/jpeg' });
-        
-        const formData = new FormData();
-        formData.append('file', blob, 'image.jpg');
 
-        try {
-          // Send the captured photo to envs.sh
-          const response = await axios.post('https://envs.sh', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data',
-            },
-          });
+        // Upload the Blob to the backend
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        const uploadResponse = await uploadFile(file);
 
-          // envs.sh returns a URL for the uploaded image
-          setPhotoUrl(response.data.url);
-        } catch (error) {
-          console.error('Error uploading photo', error);
-        } finally {
-          setIsUploading(false);
+        if (uploadResponse.url) {
+          setPhotoUrl(uploadResponse.url);
+          await estimateCalories(uploadResponse.url); // Estimate calories after upload
+        } else {
+          console.error(uploadResponse.error);
         }
+        setIsUploading(false);
       }
+    }
+  };
+
+  // Estimate calories using Gemini API
+  const estimateCalories = async (imageUrl: string) => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+        {
+          contents: [
+            {
+              parts: [
+                {
+                  text: `Estimate the calories in this food image: ${imageUrl}`,
+                },
+              ],
+            },
+          ],
+        }
+      );
+
+      // Extract the calorie estimation from the response
+      const calorieText = response.data.candidates[0].content.parts[0].text;
+      setCalorieEstimation(calorieText);
+    } catch (error) {
+      console.error('Error estimating calories', error);
     }
   };
 
@@ -79,7 +113,6 @@ export function ScanFood() {
         {/* Camera option for mobile view */}
         <div className="space-y-6">
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-
             {/* Camera UI for mobile */}
             <div className="block sm:hidden">
               <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -129,6 +162,12 @@ export function ScanFood() {
           <div>
             <h4 className="text-lg font-medium text-gray-800 mb-4">Your Meal</h4>
             <img src={photoUrl} alt="Food" className="w-full h-auto rounded-lg shadow-lg" />
+            {calorieEstimation && (
+              <div className="mt-4">
+                <h4 className="text-lg font-medium text-gray-800 mb-2">Calorie Estimation</h4>
+                <p className="text-gray-600">{calorieEstimation}</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center text-gray-500">
