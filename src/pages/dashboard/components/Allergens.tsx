@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertCircle, Search, Plus, X } from 'lucide-react';
 import Swal from 'sweetalert2';
+import axios from 'axios';
+import { CirclesWithBar } from 'react-loader-spinner';
 
 export function Allergens() {
-  const [allergens, setAllergens] = useState([
-    { id: '1', name: 'Peanuts', severity: 'High', notes: 'Avoid all tree nuts' },
-    { id: '2', name: 'Lactose', severity: 'Medium', notes: 'Small amounts ok' },
-    { id: '3', name: 'Gluten', severity: 'Low', notes: 'Mild sensitivity' },
-  ]);
+  interface Allergen {
+    _id: string;
+    name: string;
+    severity: 'High' | 'Medium' | 'Low';
+    notes: string;
+    email: string;
+  }
+
+  const [allergens, setAllergens] = useState<Allergen[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newAllergen, setNewAllergen] = useState({ name: '', severity: 'Medium', notes: '' });
+  const [newAllergen, setNewAllergen] = useState({ name: '', severity: 'Medium', notes: '', email: '' });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCommonAllergen, setSelectedCommonAllergen] = useState<string | null>(null);
   const [isSeverityDialogOpen, setIsSeverityDialogOpen] = useState(false);
@@ -21,37 +27,117 @@ export function Allergens() {
     'Peanuts', 'Wheat', 'Soybeans', 'Sesame'
   ];
 
+  // Fetch allergens from the backend
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAllergens = async () => {
+      const email = localStorage.getItem('email');
+      if (!email) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Email not found. Please log in again.',
+          confirmButtonText: 'OK',
+        });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get('https://backend-production-d4c8.up.railway.app/api/allergens', {
+          params: { email },
+        });
+        setAllergens(response.data);
+      } catch (error) {
+        console.error('Error fetching allergens:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to fetch allergens. Please try again later.',
+          confirmButtonText: 'OK',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllergens();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="text-center mt-8 flex items-center justify-center">
+        <CirclesWithBar/>
+        
+      </div>
+    );
+  }
+
   const filteredAllergens = allergens.filter(allergen =>
     allergen.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     allergen.notes.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddAllergen = () => {
+  const handleAddAllergen = async () => {
     if (!newAllergen.name) return;
 
-    setAllergens(prev => [...prev, { id: crypto.randomUUID(), ...newAllergen }]);
-    setNewAllergen({ name: '', severity: 'Medium', notes: '' });
-    setIsDialogOpen(false);
+    const email = localStorage.getItem('email');
+    if (!email) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Email not found. Please log in again.',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
 
-    // Success alert
-    Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Allergen added successfully!',
-      confirmButtonText: 'OK',
-    });
+    const allergenToAdd = { ...newAllergen, email };
+
+    try {
+      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/allergens', allergenToAdd);
+      setAllergens(prev => [...prev, response.data]);
+      setNewAllergen({ name: '', severity: 'Medium', notes: '', email: '' });
+      setIsDialogOpen(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Allergen added successfully!',
+        confirmButtonText: 'OK',
+      });
+    } catch (error) {
+      console.error('Error adding allergen:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to add allergen. Please try again later.',
+        confirmButtonText: 'OK',
+      });
+    }
   };
 
-  const handleRemoveAllergen = (id: string) => {
-    setAllergens(prev => prev.filter(allergen => allergen.id !== id));
+  const handleRemoveAllergen = async (id: string) => {
+    try {
+      await axios.delete(`https://backend-production-d4c8.up.railway.app/api/allergens/${id}`);
+      setAllergens(prev => prev.filter(allergen => allergen._id !== id));
 
-    // Success alert
-    Swal.fire({
-      icon: 'success',
-      title: 'Removed',
-      text: 'Allergen removed successfully!',
-      confirmButtonText: 'OK',
-    });
+      Swal.fire({
+        icon: 'success',
+        title: 'Removed',
+        text: 'Allergen removed successfully!',
+        confirmButtonText: 'OK',
+      });
+    } catch (error) {
+      console.error('Error removing allergen:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to remove allergen. Please try again later.',
+        confirmButtonText: 'OK',
+      });
+    }
   };
 
   const handleCommonAllergenClick = (name: string) => {
@@ -63,29 +149,52 @@ export function Allergens() {
     setIsSeverityDialogOpen(true);
   };
 
-  const handleAddCommonAllergen = () => {
+  const handleAddCommonAllergen = async () => {
     if (!selectedCommonAllergen) return;
 
-    setAllergens(prev => [...prev, {
-      id: crypto.randomUUID(),
+    const email = localStorage.getItem('email');
+    if (!email) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Email not found. Please log in again.',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    const allergenToAdd = {
       name: selectedCommonAllergen,
       severity: commonAllergenSeverity,
-      notes: commonAllergenNotes
-    }]);
+      notes: commonAllergenNotes,
+      email,
+    };
 
-    // Reset the form
-    setSelectedCommonAllergen(null);
-    setCommonAllergenSeverity('Medium');
-    setCommonAllergenNotes('');
-    setIsSeverityDialogOpen(false);
+    try {
+      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/allergens', allergenToAdd);
+      setAllergens(prev => [...prev, response.data]);
 
-    // Success alert
-    Swal.fire({
-      icon: 'success',
-      title: 'Success',
-      text: 'Common allergen added successfully!',
-      confirmButtonText: 'OK',
-    });
+      // Reset the form
+      setSelectedCommonAllergen(null);
+      setCommonAllergenSeverity('Medium');
+      setCommonAllergenNotes('');
+      setIsSeverityDialogOpen(false);
+
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: 'Common allergen added successfully!',
+        confirmButtonText: 'OK',
+      });
+    } catch (error) {
+      console.error('Error adding common allergen:', error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to add common allergen. Please try again later.',
+        confirmButtonText: 'OK',
+      });
+    }
   };
 
   return (
@@ -164,7 +273,7 @@ export function Allergens() {
 
         <div className="space-y-4">
           {filteredAllergens.map((allergen) => (
-            <div key={allergen.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div key={allergen._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div className="flex items-start gap-4">
                 <AlertCircle className="h-5 w-5 text-red-500 mt-1" />
                 <div>
@@ -182,7 +291,7 @@ export function Allergens() {
                 </span>
                 <button 
                   className="p-1 hover:bg-gray-200 rounded"
-                  onClick={() => handleRemoveAllergen(allergen.id)}
+                  onClick={() => handleRemoveAllergen(allergen._id)}
                 >
                   <X className="h-5 w-5 text-gray-600" />
                 </button>
