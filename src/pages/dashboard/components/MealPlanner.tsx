@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Coffee, Sun, Utensils, X, Plus, Check } from 'lucide-react';
 import {
   startOfMonth,
@@ -10,6 +10,16 @@ import {
   isSameMonth,
   isToday,
 } from 'date-fns';
+import axios from 'axios';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+interface MealPlan {
+  date: string;
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  email: string;
+}
 
 function MealPlanner() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -17,12 +27,44 @@ function MealPlanner() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewingMeals, setIsViewingMeals] = useState(false);
   const [viewingDate, setViewingDate] = useState<Date | null>(null);
-  const [meals, setMeals] = useState<Record<string, { breakfast: string; lunch: string; dinner: string }>>({});
+  const [meals, setMeals] = useState<Record<string, Omit<MealPlan, 'date' | 'email'>>>({});
   const [newMeal, setNewMeal] = useState({ breakfast: '', lunch: '', dinner: '' });
 
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Get all days in the current month
+  // Fetch meals from backend
+  useEffect(() => {
+    const fetchMeals = async () => {
+      const email = localStorage.getItem('email');
+      if (!email) {
+        console.error('Email not found in localStorage');
+        return;
+      }
+
+      try {
+        const response = await axios.get<MealPlan[]>('https://backend-production-d4c8.up.railway.app/api/mealPlanner', {
+          params: { email },
+        });
+        
+        const mealsData = response.data.reduce((acc, meal) => ({
+          ...acc,
+          [meal.date]: {
+            breakfast: meal.breakfast,
+            lunch: meal.lunch,
+            dinner: meal.dinner
+          }
+        }), {});
+        
+        setMeals(mealsData);
+      } catch (error) {
+        console.error('Error fetching meals:', error);
+      }
+    };
+
+    fetchMeals();
+  }, []);
+
+  // Date calculations
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -43,19 +85,82 @@ function MealPlanner() {
     }
   };
 
-  const hasMeals = (date: string) => {
-    return !!meals[date];
+  const hasMeals = (date: string) => !!meals[date];
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = localStorage.getItem('email');
+    if (!email) {
+      console.error('Email not found in localStorage');
+      return;
+    }
+
+    const dateStr = formatDate(selectedDate);
+    const mealData = {
+      date: dateStr,
+      email,
+      ...newMeal
+    };
+
+    try {
+      await axios.post('https://backend-production-d4c8.up.railway.app/api/mealPlanner', mealData);
+      setMeals(prev => ({
+        ...prev,
+        [dateStr]: newMeal
+      }));
+      setNewMeal({ breakfast: '', lunch: '', dinner: '' });
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error('Error saving meal:', error);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const dateStr = formatDate(selectedDate);
-    setMeals(prev => ({
-      ...prev,
-      [dateStr]: newMeal
-    }));
-    setNewMeal({ breakfast: '', lunch: '', dinner: '' });
-    setIsModalOpen(false);
+  // AI Meal Recommendation Logic
+  const handleGenerateRecommendation = async () => {
+    try {
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      
+      const dayOfWeek = format(selectedDate, 'EEEE');
+      const prompt = `
+        Generate a healthy daily meal plan for ${dayOfWeek} with these requirements:
+        1. Include breakfast, lunch, and dinner
+        2. Each meal should have a short health benefit explanation (20-30 words)
+        3. Focus on balanced nutrition
+        4. Seasonal ingredients preferred
+        5. Include vegetarian options
+        
+        Format response as JSON:
+        {
+          "breakfast": {
+            "meal": "meal name",
+            "benefit": "health benefit"
+          },
+          "lunch": {
+            "meal": "meal name",
+            "benefit": "health benefit"
+          },
+          "dinner": {
+            "meal": "meal name",
+            "benefit": "health benefit"
+          }
+        }
+      `;
+
+      const result = await model.generateContent(prompt);
+      const responseText = result.response.text();
+      const jsonResponse = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+
+      setNewMeal({
+        breakfast: `${jsonResponse.breakfast.meal} (${jsonResponse.breakfast.benefit})`,
+        lunch: `${jsonResponse.lunch.meal} (${jsonResponse.lunch.benefit})`,
+        dinner: `${jsonResponse.dinner.meal} (${jsonResponse.dinner.benefit})`
+      });
+    } catch (error) {
+      console.error('Error generating recommendation:', error);
+      alert('Could not generate meal plan. Please try again.');
+    }
   };
 
   return (
@@ -215,12 +320,21 @@ function MealPlanner() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Select Date
                   </label>
-                  <input
-                    type="date"
-                    value={formatDate(selectedDate)}
-                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                    className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={formatDate(selectedDate)}
+                      onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleGenerateRecommendation}
+                      className="px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all"
+                    >
+                      AI Suggest
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-4">

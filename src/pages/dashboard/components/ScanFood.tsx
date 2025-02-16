@@ -1,14 +1,42 @@
-import { Camera, Upload } from 'lucide-react';
-import { useState, useRef } from 'react';
+import { Camera, Upload, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import axios from 'axios';
 
 export function ScanFood() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [calorieEstimation, setCalorieEstimation] = useState<string | null>(null);
+  const [allergens, setAllergens] = useState<string[]>([]); // Store user's allergens
+  const [allergenAlert, setAllergenAlert] = useState<string | null>(null); // Store allergen alert message
   const cameraRef = useRef<any>(null);
+
+  // Fetch allergens from the backend
+  useEffect(() => {
+    const fetchAllergens = async () => {
+      const email = localStorage.getItem('email');
+      if (!email) {
+        console.error('Email not found in localStorage');
+        return;
+      }
+
+      try {
+        const response = await axios.get('https://backend-production-d4c8.up.railway.app/api/allergens', {
+          params: { email },
+        });
+        const userAllergens = response.data.map((allergen: { name: string }) =>
+          allergen.name.toLowerCase().trim()
+        );
+        setAllergens(userAllergens);
+      } catch (error) {
+        console.error('Error fetching allergens:', error);
+      }
+    };
+
+    fetchAllergens();
+  }, []);
 
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,6 +123,7 @@ export function ScanFood() {
 
         if (resultData.error) {
           setCalorieEstimation(resultData.error);
+          setAllergenAlert(null); // Clear allergen alert if the image is not food
         } else {
           const estimation = `
             Dish Name: ${resultData.dish_name}
@@ -104,11 +133,28 @@ export function ScanFood() {
             Healthiness Score: ${resultData.healthiness}/10
           `;
           setCalorieEstimation(estimation);
+
+          // Enhanced allergen detection
+          const ingredientsList = resultData.ingredients
+            .map((ingredient: string) => ingredient.toLowerCase().trim())
+            .join(', ');
+
+          const detectedAllergens = allergens.filter(allergen => {
+            const regex = new RegExp(`\\b${allergen}\\b`, 'i');
+            return regex.test(ingredientsList);
+          });
+
+          if (detectedAllergens.length > 0) {
+            setAllergenAlert(`⚠️ Allergy Warning: Contains ${detectedAllergens.join(', ')}`);
+          } else {
+            setAllergenAlert(null); // Clear allergen alert if no allergens are detected
+          }
         }
       };
     } catch (error) {
       console.error('Error estimating calories', error);
       setCalorieEstimation('Error: Unable to analyze image. Please try again.');
+      setAllergenAlert(null); // Clear allergen alert on error
     }
   };
 
@@ -173,6 +219,14 @@ export function ScanFood() {
               <div className="mt-4">
                 <h4 className="text-lg font-medium text-gray-800 mb-2">Calorie Estimation</h4>
                 <p className="text-gray-600 whitespace-pre-line">{calorieEstimation}</p>
+              </div>
+            )}
+            {allergenAlert && (
+              <div className="mt-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                <div className="flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  <span className="font-medium">{allergenAlert}</span>
+                </div>
               </div>
             )}
           </div>
