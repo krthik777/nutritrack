@@ -1,7 +1,7 @@
 import { Camera, Upload } from 'lucide-react';
 import { useState, useRef } from 'react';
-import axios from 'axios';
 import Webcam from 'react-webcam';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export function ScanFood() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -9,29 +9,6 @@ export function ScanFood() {
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [calorieEstimation, setCalorieEstimation] = useState<string | null>(null);
   const cameraRef = useRef<any>(null);
-
-  // Upload file to backend
-  const uploadFile = async (file: File | Blob) => {
-    const form = new FormData();
-    form.append('file', file);
-
-    try {
-      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/scanfood', form, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-
-      if (response.status !== 200) {
-        return { error: 'Error uploading file' };
-      } else {
-        return { url: response.data.url }; // URL returned by the backend
-      }
-    } catch (error) {
-      console.error(error);
-      return { error: 'Error uploading file' };
-    }
-  };
 
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,15 +25,8 @@ export function ScanFood() {
           // Set the photo URL for preview
           setPhotoUrl(base64Image);
 
-          // Upload the file to the backend (envs.sh)
-          const uploadResponse = await uploadFile(file);
-
-          if (uploadResponse.url) {
-            // Estimate calories using the public URL
-            await estimateCalories(uploadResponse.url);
-          } else {
-            console.error(uploadResponse.error);
-          }
+          // Estimate calories using the file
+          await estimateCalories(file);
         };
         reader.readAsDataURL(file);
 
@@ -79,16 +49,11 @@ export function ScanFood() {
         const byteArray = new Uint8Array(atob(imageSrc.split(',')[1]).split('').map(char => char.charCodeAt(0)));
         const blob = new Blob([byteArray], { type: 'image/jpeg' });
 
-        // Upload the Blob to the backend (envs.sh)
+        // Convert Blob to File
         const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-        const uploadResponse = await uploadFile(file);
 
-        if (uploadResponse.url) {
-          // Estimate calories using the public URL
-          await estimateCalories(uploadResponse.url);
-        } else {
-          console.error(uploadResponse.error);
-        }
+        // Estimate calories using the file
+        await estimateCalories(file);
 
         setIsUploading(false);
       }
@@ -96,38 +61,54 @@ export function ScanFood() {
   };
 
   // Estimate calories using Gemini API
-  const estimateCalories = async (imageUrl: string) => {
+  const estimateCalories = async (file: File) => {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  
-      // Ensure the image URL is valid
-      if (!imageUrl.startsWith('https://')) {
-        throw new Error('Invalid image URL');
-      }
-  
-      // Send the image URL to Gemini within the text field
-      alert(imageUrl);
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Imagine that you are a nutritionist with great knowledge of food items and their calorie values. Analyze this image: ${imageUrl} identify the food dish and return its calorie value and how much serving should be made in one meal as per the WHO standards. If it is not a food or if the image is not clear, return an error.`,
-                },
-              ],
-            },
-          ],
+
+      // Initialize Google Generative AI
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+      // Convert the file to a base64 string
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async () => {
+        const base64Data = reader.result?.toString().split(',')[1]; // Remove data URL prefix
+
+        if (!base64Data) {
+          throw new Error('Failed to convert file to base64.');
         }
-      );
-  
-      // Extract the calorie estimation from the response
-      const calorieText = response.data.candidates[0].content.parts[0].text;
-      setCalorieEstimation(calorieText);
+
+        // Use the base64 image with the Gemini model
+        const result = await model.generateContent([
+          "You are a professional nutritionist. Analyze this food image and provide:\n1.Name of dish / food item \n2. Calorie estimate\n3. Main ingredients\n4. Recommended serving size according to WHO standards\n5. Healthiness score (1-10)\nFormat as a concise JSON object with keys: dish_name, calories, ingredients, serving_size, healthiness. If not food, return { error: 'Not a food image' }",
+          {
+            inlineData: {
+              mimeType: file.type,
+              data: base64Data,
+            },
+          },
+        ]);
+
+        const responseText = result.response.text();
+        const resultData = JSON.parse(responseText.replace(/```json/g, '').replace(/```/g, '').trim());
+
+        if (resultData.error) {
+          setCalorieEstimation(resultData.error);
+        } else {
+          const estimation = `
+            Dish Name: ${resultData.dish_name}
+            Estimated Calories: ${resultData.calories}
+            Ingredients: ${resultData.ingredients.join(', ')}
+            Recommended Serving: ${resultData.serving_size}
+            Healthiness Score: ${resultData.healthiness}/10
+          `;
+          setCalorieEstimation(estimation);
+        }
+      };
     } catch (error) {
       console.error('Error estimating calories', error);
-      setCalorieEstimation('Error: Unable to estimate calories. Please try again.');
+      setCalorieEstimation('Error: Unable to analyze image. Please try again.');
     }
   };
 
@@ -191,7 +172,7 @@ export function ScanFood() {
             {calorieEstimation && (
               <div className="mt-4">
                 <h4 className="text-lg font-medium text-gray-800 mb-2">Calorie Estimation</h4>
-                <p className="text-gray-600">{calorieEstimation}</p>
+                <p className="text-gray-600 whitespace-pre-line">{calorieEstimation}</p>
               </div>
             )}
           </div>
