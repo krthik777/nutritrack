@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, Camera, Calendar, AlertCircle, MessageSquare, User, Settings, Apple, LogOut } from "lucide-react";
+import { BarChart3, Camera, Calendar, AlertCircle, MessageSquare, User, Settings, Apple, LogOut, Leaf } from "lucide-react";
 import { DashboardCont } from "./components/Dashboardcont";
 import { ScanFood } from "./components/ScanFood";
 import MealPlanner from "./components/MealPlanner";
@@ -137,7 +137,7 @@ function Dashboard() {
         } md:translate-x-0`}
       >
         <div className="flex items-center gap-2 mb-8">
-          <Apple className="h-8 w-8 text-green-600" />
+            <Leaf className="h-8 w-8 fill-green-500" />
           <h1 className="text-2xl font-bold text-gray-800">NutriTrack</h1>
         </div>
 

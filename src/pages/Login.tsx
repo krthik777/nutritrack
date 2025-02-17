@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Salad } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import Swal from 'sweetalert2';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const navigate = useNavigate();
   const { signIn, signUp, user, error, loading } = useAuthStore();
 
   useEffect(() => {
-    if (user) {
+    if (user && isLogin) {
+      // Only set email in localStorage and navigate to /dashboard on login
       localStorage.setItem('email', email);
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isLogin, email]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +26,27 @@ const Login = () => {
       if (isLogin) {
         await signIn(email, password);
       } else {
+        if (password !== confirmPassword) {
+          Swal.fire({
+            title: 'Error',
+            text: 'Passwords do not match. Please try again.',
+            icon: 'error',
+            confirmButtonText: 'OK',
+          });
+          return;
+        }
         await signUp(email, password);
+        Swal.fire({
+          title: 'Check your email',
+          text: 'A confirmation link has been sent to your email address. Please check your email to complete the signup process.',
+          icon: 'info',
+          confirmButtonText: 'OK',
+        });
+        // setIsLogin(true); // Switch back to login page
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        navigate('/');
       }
     } catch (err) {
       // Error is handled by the store
@@ -31,7 +54,11 @@ const Login = () => {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gray-100">
+    <div
+      className={`relative min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 ${
+        isLogin ? 'bg-gradient-to-r from-green-50 to-blue-50' : 'bg-gradient-to-r from-blue-50 to-purple-50'
+      }`}
+    >
       <div className="relative sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <Salad className="h-12 w-12 text-green-600" />
@@ -79,6 +106,23 @@ const Login = () => {
                 disabled={loading}
               />
             </div>
+
+            {!isLogin && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  type="password"
+                  required
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-green-500 focus:border-green-500"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+            )}
 
             <div>
               <button
