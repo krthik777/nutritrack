@@ -23,7 +23,7 @@ export function ScanFood() {
       }
 
       try {
-        const response = await axios.get('https://backend-production-d4c8.up.railway.app/api/allergens', {
+        const response = await axios.get('https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens', {
           params: { email },
         });
         const userAllergens = response.data.map((allergen: { name: string }) =>

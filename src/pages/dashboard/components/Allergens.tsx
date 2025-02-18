@@ -45,7 +45,7 @@ export function Allergens() {
       }
 
       try {
-        const response = await axios.get('https://backend-production-d4c8.up.railway.app/api/allergens', {
+        const response = await axios.get('https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens', {
           params: { email },
         });
         setAllergens(response.data);
@@ -96,7 +96,7 @@ export function Allergens() {
     const allergenToAdd = { ...newAllergen, email };
 
     try {
-      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/allergens', allergenToAdd);
+      const response = await axios.post('https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens', allergenToAdd);
       setAllergens(prev => [...prev, response.data]);
       setNewAllergen({ name: '', severity: 'Medium', notes: '', email: '' });
       setIsDialogOpen(false);
@@ -120,7 +120,7 @@ export function Allergens() {
 
   const handleRemoveAllergen = async (id: string) => {
     try {
-      await axios.delete(`https://backend-production-d4c8.up.railway.app/api/allergens/${id}`);
+      await axios.delete(`https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens/${id}`);
       setAllergens(prev => prev.filter(allergen => allergen._id !== id));
 
       Swal.fire({
@@ -171,7 +171,7 @@ export function Allergens() {
     };
 
     try {
-      const response = await axios.post('https://backend-production-d4c8.up.railway.app/api/allergens', allergenToAdd);
+      const response = await axios.post('https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens', allergenToAdd);
       setAllergens(prev => [...prev, response.data]);
 
       // Reset the form

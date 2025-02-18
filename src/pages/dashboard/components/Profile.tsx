@@ -26,7 +26,7 @@ export function Profile() {
       if (!email) return;
       try {
         const response = await fetch(
-          `https://backend-production-d4c8.up.railway.app/api/profile?email=${email}`
+          `https://military-maridel-k-rthik-de59a126.koyeb.app/api/profile?email=${email}`
         );
         const data = await response.json();
         if (data.message === "Profile not found.") {
@@ -48,7 +48,7 @@ export function Profile() {
 
     try {
       const response = await fetch(
-        "https://backend-production-d4c8.up.railway.app/api/profile",
+        "https://military-maridel-k-rthik-de59a126.koyeb.app/api/profile",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

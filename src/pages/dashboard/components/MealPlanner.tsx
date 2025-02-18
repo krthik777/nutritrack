@@ -58,7 +58,7 @@ function MealPlanner() {
 
       try {
         const response = await axios.get<MealPlan[]>(
-          "https://backend-production-d4c8.up.railway.app/api/mealPlanner",
+          "https://military-maridel-k-rthik-de59a126.koyeb.app/api/mealPlanner",
           {
             params: { email },
           }
@@ -125,7 +125,7 @@ function MealPlanner() {
 
     try {
       await axios.post(
-        "https://backend-production-d4c8.up.railway.app/api/mealPlanner",
+        "https://military-maridel-k-rthik-de59a126.koyeb.app/api/mealPlanner",
         mealData
       );
       setMeals((prev) => ({
