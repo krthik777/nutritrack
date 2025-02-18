@@ -17,6 +17,12 @@ function Dashboard() {
   const navigate = useNavigate(); // Initialize useNavigate
   const [hasDetails, setHasDetails] = useState(false);
 
+  const handleSignout = () => {
+    localStorage.removeItem("email"); // Remove the email from localStorage
+    navigate("/login"); // Redirect to login
+    signOut(); // Call the signOut function
+  }
+
   const nutritionSummary = {
     calories: 1330,
     protein: 75,
@@ -191,7 +197,7 @@ function Dashboard() {
           {/* Sign Out Button */}
           <div className="absolute bottom-6 w-full px-6">
             <button
-              onClick={signOut}
+              onClick={handleSignout}
               className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-50"
             >
               <LogOut className="h-5 w-5" />
