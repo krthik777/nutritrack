@@ -70,6 +70,7 @@ export function Profile() {
           icon: "success",
           confirmButtonText: "OK",
         });
+        window.location.reload();
       }
       else{
         Swal.fire({
