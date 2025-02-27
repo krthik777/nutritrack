@@ -61,7 +61,8 @@ function Dashboard() {
       if(!email) {
         navigate("/login"); // Redirect to login if email doesn't exist
       }
-      const response = await fetch(`https://military-maridel-k-rthik-de59a126.koyeb.app/api/hasdetails?email=${email}`);
+      const BackendUrl = import.meta.env.VITE_BACKEND_URL;
+      const response = await fetch(`${BackendUrl}/api/hasdetails?email=${email}`);
       const result = await response.json();
       setHasDetails(result.exists);
       // if (!result.exists) {

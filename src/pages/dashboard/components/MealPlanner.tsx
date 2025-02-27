@@ -57,8 +57,10 @@ function MealPlanner() {
       }
 
       try {
+        const BackendUrl = import.meta.env.VITE_BACKEND_URL;
+
         const response = await axios.get<MealPlan[]>(
-          "https://military-maridel-k-rthik-de59a126.koyeb.app/api/mealPlanner",
+          `${BackendUrl}/api/mealPlanner`,
           {
             params: { email },
           }

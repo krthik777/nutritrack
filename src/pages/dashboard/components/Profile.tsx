@@ -25,8 +25,9 @@ export function Profile() {
     const fetchProfile = async () => {
       if (!email) return;
       try {
+        const BackendUrl = import.meta.env.VITE_BACKEND_URL;
         const response = await fetch(
-          `https://military-maridel-k-rthik-de59a126.koyeb.app/api/profile?email=${email}`
+          `${BackendUrl}/api/profile?email=${email}`
         );
         const data = await response.json();
         if (data.message === "Profile not found.") {
@@ -47,8 +48,10 @@ export function Profile() {
     if (!profile) return;
 
     try {
+      const BackendUrl = import.meta.env.VITE_BACKEND_URL;
+
       const response = await fetch(
-        "https://military-maridel-k-rthik-de59a126.koyeb.app/api/profile",
+        `${BackendUrl}/api/profile`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -3,14 +3,16 @@ import { useState, useRef, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import axios from 'axios';
+import { Circles, ThreeDots } from 'react-loader-spinner'; // Import the loading spinner
 
 export function ScanFood() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [calorieEstimation, setCalorieEstimation] = useState<string | null>(null);
-  const [allergens, setAllergens] = useState<string[]>([]); // Store user's allergens
-  const [allergenAlert, setAllergenAlert] = useState<string | null>(null); // Store allergen alert message
+  const [allergens, setAllergens] = useState<string[]>([]);
+  const [allergenAlert, setAllergenAlert] = useState<string | null>(null);
+  const [isCapturing, setIsCapturing] = useState(false); // State for capture button loading
   const cameraRef = useRef<any>(null);
 
   // Fetch allergens from the backend
@@ -23,7 +25,8 @@ export function ScanFood() {
       }
 
       try {
-        const response = await axios.get('https://military-maridel-k-rthik-de59a126.koyeb.app/api/allergens', {
+        const BackendUrl = import.meta.env.VITE_BACKEND_URL;
+        const response = await axios.get(`${BackendUrl}/api/allergens`, {
           params: { email },
         });
         const userAllergens = response.data.map((allergen: { name: string }) =>
@@ -49,11 +52,7 @@ export function ScanFood() {
         const reader = new FileReader();
         reader.onload = async (event) => {
           const base64Image = event.target?.result as string;
-
-          // Set the photo URL for preview
           setPhotoUrl(base64Image);
-
-          // Estimate calories using the file
           await estimateCalories(file);
         };
         reader.readAsDataURL(file);
@@ -66,11 +65,10 @@ export function ScanFood() {
   // Handle camera photo capture
   const capturePhoto = async () => {
     if (cameraRef.current) {
+      setIsCapturing(true); // Start loading
       const imageSrc = cameraRef.current.getScreenshot();
       if (imageSrc) {
         setIsUploading(true);
-
-        // Set the photo URL for preview
         setPhotoUrl(imageSrc);
 
         // Convert the base64 image to a Blob for upload
@@ -85,6 +83,7 @@ export function ScanFood() {
 
         setIsUploading(false);
       }
+      setIsCapturing(false); // Stop loading
     }
   };
 
@@ -92,8 +91,6 @@ export function ScanFood() {
   const estimateCalories = async (file: File) => {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-
-      // Initialize Google Generative AI
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
@@ -101,7 +98,7 @@ export function ScanFood() {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onload = async () => {
-        const base64Data = reader.result?.toString().split(',')[1]; // Remove data URL prefix
+        const base64Data = reader.result?.toString().split(',')[1];
 
         if (!base64Data) {
           throw new Error('Failed to convert file to base64.');
@@ -123,7 +120,7 @@ export function ScanFood() {
 
         if (resultData.error) {
           setCalorieEstimation(resultData.error);
-          setAllergenAlert(null); // Clear allergen alert if the image is not food
+          setAllergenAlert(null);
         } else {
           const estimation = `
             Dish Name: ${resultData.dish_name}
@@ -147,14 +144,28 @@ export function ScanFood() {
           if (detectedAllergens.length > 0) {
             setAllergenAlert(`⚠️ Allergy Warning: Contains ${detectedAllergens.join(', ')}`);
           } else {
-            setAllergenAlert(null); // Clear allergen alert if no allergens are detected
+            setAllergenAlert(null);
+          }
+
+          // Send the food details to the backend
+          const email = localStorage.getItem('email');
+          if (email) {
+            const BackendUrl = import.meta.env.VITE_BACKEND_URL;
+            await axios.post(`${BackendUrl}/api/foodLog`, {
+              email,
+              dishName: resultData.dish_name,
+              calories: resultData.calories,
+              ingredients: resultData.ingredients,
+              servingSize: resultData.serving_size,
+              healthiness: resultData.healthiness,
+            });
           }
         }
       };
     } catch (error) {
       console.error('Error estimating calories', error);
       setCalorieEstimation('Error: Unable to analyze image. Please try again.');
-      setAllergenAlert(null); // Clear allergen alert on error
+      setAllergenAlert(null);
     }
   };
 
@@ -182,8 +193,16 @@ export function ScanFood() {
                       facingMode: 'environment',
                     }}
                   />
-                  <button onClick={capturePhoto} className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2">
-                    Capture Photo
+                  <button
+                    onClick={capturePhoto}
+                    className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg inline-flex items-center gap-2"
+                    disabled={isCapturing}
+                  >
+                    {isCapturing ? (
+                      <ThreeDots height="20" width="20" color="#ffffff" />
+                    ) : (
+                      'Capture Photo'
+                    )}
                   </button>
                 </div>
               ) : (
@@ -233,7 +252,7 @@ export function ScanFood() {
         ) : (
           <div className="text-center text-gray-500">
             {isUploading ? (
-              <p>Uploading...</p>
+              <p>Uploading...<Circles/></p>
             ) : (
               <p>No image uploaded or captured yet.</p>
             )}
