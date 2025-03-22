@@ -106,7 +106,7 @@ export function ScanFood() {
 
         // Use the base64 image with the Gemini model
         const result = await model.generateContent([
-          "You are a professional nutritionist. Analyze this food image and provide:\n1.Name of dish / food item \n2. Calorie estimate\n3. Main ingredients\n4. Recommended serving size according to WHO standards\n5. Healthiness score (1-10)\nFormat as a concise JSON object with keys: dish_name, calories, ingredients, serving_size, healthiness. If not food, return { error: 'Not a food image' }",
+          "You are a professional nutritionist. Analyze this food image and provide:\n1.Name of dish / food item \n2. Calorie estimate\n3. Main ingredients\n4. Recommended serving size according to WHO standards\n5. Healthiness score (1-10) \n 6.Protein content in the food \n 7. Carb content in food \n 8. Fat content in food\nFormat as a concise JSON object with keys: dish_name, calories, ingredients, serving_size, healthiness, protein, carb, fat. If not food, return { error: 'Not a food image' }",
           {
             inlineData: {
               mimeType: file.type,
@@ -158,6 +158,9 @@ export function ScanFood() {
               ingredients: resultData.ingredients,
               servingSize: resultData.serving_size,
               healthiness: resultData.healthiness,
+              protein: resultData.protein,
+              carbs: resultData.carb,
+              fat: resultData.fat,
             });
           }
         }

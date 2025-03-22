@@ -161,7 +161,7 @@ function MealPlanner() {
       3. Focus on balanced nutrition
       4. Seasonal ingredients preferred
       5. Include vegetarian options
-      6. Follow Indian Cuisine
+      6. Follow Indian Cuisine, preferrably South Indian also provide most apt dish in term of cooking and nutrition
       7. Provide only the meal name and health benefit
       
       Format response as JSON:
