@@ -179,7 +179,7 @@ function Dashboard() {
             { icon: AlertCircle, label: "Allergens", id: "allergens" },
             { icon: MessageSquare, label: "AI Chat", id: "chat" },
             { icon: User, label: "Profile", id: "profile" },
-            { icon: Settings, label: "Settings", id: "settings" },
+            // { icon: Settings, label: "Settings", id: "settings" },
           ].map((item) => (
             <button
               key={item.id}
