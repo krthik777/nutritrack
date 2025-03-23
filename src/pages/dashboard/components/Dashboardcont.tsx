@@ -9,6 +9,8 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
+import { Navigate } from "react-router-dom";
+
 
 interface Meal {
   id: string;
@@ -57,7 +59,6 @@ export function DashboardCont() {
     const mail = localStorage.getItem("email");
     if (!mail) {
       window.location.href = "/login";
-      return;
     }
 
     const fetchNews = async () => {

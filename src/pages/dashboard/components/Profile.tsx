@@ -19,7 +19,7 @@ export function Profile() {
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [newGoal, setNewGoal] = useState("");
   const [newPreference, setNewPreference] = useState("");
-  const email = localStorage.getItem("email") || "";
+  const email = localStorage.getItem("email");
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -100,7 +100,7 @@ export function Profile() {
   const handleAddItem = (type: "goals" | "dietaryPreferences", value: string) => {
     if (!value.trim()) return;
     setProfile((prev) => ({
-      ...(prev || { name: "", email, phone: "", location: "", height: "", weight: "", goals: [], dietaryPreferences: [] }),
+      ...(prev || { name: "", email: email || "", phone: "", location: "", height: "", weight: "", goals: [], dietaryPreferences: [] }),
       [type]: [...(prev?.[type] || []), value.trim()],
     }));
     type === "goals" ? setNewGoal("") : setNewPreference("");
@@ -132,7 +132,7 @@ export function Profile() {
           ))}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input type="text" value={email} disabled className="w-full px-4 py-2 border rounded-lg bg-gray-200 cursor-not-allowed" />
+            <input type="text" value={email || ""} disabled className="w-full px-4 py-2 border rounded-lg bg-gray-200 cursor-not-allowed" />
           </div>
           {[{ label: "Goals", value: newGoal, setter: setNewGoal, type: "goals" },
             { label: "Dietary Preferences", value: newPreference, setter: setNewPreference, type: "dietaryPreferences" }].map(({ label, value, setter, type }) => (

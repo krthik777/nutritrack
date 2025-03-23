@@ -13,38 +13,29 @@ const Login = () => {
   const { signIn, signUp, user, error, loading } = useAuthStore();
 
   useEffect(() => {
-    if (user && isLogin) {
-      localStorage.setItem('email', email); // Set email in localStorage
-      navigate('/dashboard'); // Redirect to dashboard
-    }
-  }, [user, navigate, isLogin, email]);
+    
+    if (user && localStorage.getItem('email')) navigate('/dashboard');
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isLogin) {
         await signIn(email, password);
+        // Direct navigation after successful login
+        localStorage.setItem('email', email);
+        navigate('/dashboard');
       } else {
         if (password !== confirmPassword) {
-          Swal.fire({
-            title: 'Error',
-            text: 'Passwords do not match. Please try again.',
-            icon: 'error',
-            confirmButtonText: 'OK',
-          });
+          Swal.fire('Error', 'Passwords do not match', 'error');
           return;
         }
         await signUp(email, password);
-        Swal.fire({
-          title: 'Check your email',
-          text: 'A confirmation link has been sent to your email address. Please check your email to complete the signup process.',
-          icon: 'info',
-          confirmButtonText: 'OK',
-        });
+        Swal.fire('Verify Email', 'Confirmation link sent to your email', 'info');
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        setIsLogin(true); // Switch back to login page
+        setIsLogin(true);
       }
     } catch (err) {
       // Error is handled by the store

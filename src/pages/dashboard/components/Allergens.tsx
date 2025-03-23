@@ -3,6 +3,7 @@ import { AlertCircle, Search, Plus, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import axios from 'axios';
 import { CirclesWithBar } from 'react-loader-spinner';
+import { useNavigate } from 'react-router-dom';
 
 export function Allergens() {
   interface Allergen {
@@ -30,6 +31,8 @@ export function Allergens() {
   // Fetch allergens from the backend
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     const fetchAllergens = async () => {
       const email = localStorage.getItem('email');
@@ -40,6 +43,7 @@ export function Allergens() {
           text: 'Email not found. Please log in again.',
           confirmButtonText: 'OK',
         });
+        navigate('/login');
         setLoading(false);
         return;
       }
@@ -64,7 +68,7 @@ export function Allergens() {
     };
 
     fetchAllergens();
-  }, []);
+  }, [navigate]);
 
   if (loading) {
     return (
