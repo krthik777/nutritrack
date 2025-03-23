@@ -23,7 +23,9 @@ export function Profile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!email) return;
+      if (!email) {
+        window.location.href = "/login";
+      };
       try {
         const BackendUrl = import.meta.env.VITE_BACKEND_URL;
         const response = await fetch(
