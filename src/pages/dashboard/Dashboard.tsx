@@ -1,73 +1,38 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, Camera, Calendar, AlertCircle, MessageSquare, User, Settings, Apple, LogOut, Leaf } from "lucide-react";
+import { BarChart3, Camera, Calendar, AlertCircle, MessageSquare, User, LogOut, Leaf } from "lucide-react";
 import { DashboardCont } from "./components/Dashboardcont";
 import { ScanFood } from "./components/ScanFood";
 import MealPlanner from "./components/MealPlanner";
 import { Allergens } from "./components/Allergens";
 import { AIChat } from "./components/AIChat";
 import { Profile } from "./components/Profile";
-import { Settings as SettingsPage } from "./components/Settings";
-import { useAuthStore } from "../../store/authStore"; // Import the auth store
+import { useAuthStore } from "../../store/authStore";
 
 function Dashboard() {
   const [selectedTab, setSelectedTab] = useState("dashboard");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // New state to handle sidebar visibility
-  const { signOut } = useAuthStore(); // Access the signOut function
-  const navigate = useNavigate(); // Initialize useNavigate
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { signOut } = useAuthStore();
+  const navigate = useNavigate();
   const [hasDetails, setHasDetails] = useState(false);
 
   const handleSignout = () => {
-    localStorage.removeItem("email"); // Remove the email from localStorage
+    localStorage.removeItem("email"); // Clear email from localStorage
+    signOut(); // Call signOut from the auth store
     navigate("/login"); // Redirect to login
-    signOut(); // Call the signOut function
-  }
-
-  const nutritionSummary = {
-    calories: 1330,
-    protein: 75,
-    carbs: 160,
-    fat: 45,
-    target: 2000,
   };
-
-  const recentMeals = [
-    {
-      name: "Breakfast",
-      calories: 450,
-      time: "8:30 AM",
-      image:
-        "https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&q=80&w=300&h=200",
-    },
-    {
-      name: "Lunch",
-      calories: 680,
-      time: "1:15 PM",
-      image:
-        "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=300&h=200",
-    },
-    {
-      name: "Snack",
-      calories: 200,
-      time: "4:00 PM",
-      image:
-        "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?auto=format&fit=crop&q=80&w=300&h=200",
-    },
-  ];
 
   const checkProfileDetails = async () => {
     try {
-      const email = localStorage.getItem("email"); // Retrieve the email from localStorage
-      if(!email) {
-        navigate("/login"); // Redirect to login if email doesn't exist
+      const email = localStorage.getItem("email");
+      if (!email) {
+        navigate("/login"); // Redirect to login if email is not found
+        return;
       }
       const BackendUrl = import.meta.env.VITE_BACKEND_URL;
       const response = await fetch(`${BackendUrl}/api/hasdetails?email=${email}`);
       const result = await response.json();
       setHasDetails(result.exists);
-      // if (!result.exists) {
-      //   navigate("/profile"); // Redirect to profile if details don't exist
-      // }
     } catch (error) {
       console.error("Failed to check profile details:", error);
     }
@@ -75,7 +40,7 @@ function Dashboard() {
 
   useEffect(() => {
     checkProfileDetails();
-  }, []); 
+  }, []);
 
   const renderContent = () => {
     if (!hasDetails) {
@@ -84,12 +49,7 @@ function Dashboard() {
 
     switch (selectedTab) {
       case "dashboard":
-        return (
-          <DashboardCont
-            nutritionSummary={nutritionSummary}
-            recentMeals={recentMeals}
-          />
-        );
+        return <DashboardCont />;
       case "scan":
         return <ScanFood />;
       case "planner":
@@ -100,15 +60,8 @@ function Dashboard() {
         return <AIChat />;
       case "profile":
         return <Profile />;
-      case "settings":
-        return <SettingsPage />;
       default:
-        return (
-          <DashboardCont
-            nutritionSummary={nutritionSummary}
-            recentMeals={recentMeals}
-          />
-        );
+        return <DashboardCont />;
     }
   };
 
@@ -144,7 +97,7 @@ function Dashboard() {
         } md:translate-x-0`}
       >
         <div className="flex items-center gap-2 mb-8">
-            <Leaf className="h-8 w-8 fill-green-500" />
+          <Leaf className="h-8 w-8 fill-green-500" />
           <h1 className="text-2xl font-bold text-gray-800">NutriTrack</h1>
         </div>
 
@@ -179,7 +132,6 @@ function Dashboard() {
             { icon: AlertCircle, label: "Allergens", id: "allergens" },
             { icon: MessageSquare, label: "AI Chat", id: "chat" },
             { icon: User, label: "Profile", id: "profile" },
-            // { icon: Settings, label: "Settings", id: "settings" },
           ].map((item) => (
             <button
               key={item.id}
@@ -215,16 +167,6 @@ function Dashboard() {
         }`}
       >
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          {/* <header className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-800">
-              Welcome back, Alex!
-            </h2>
-            <p className="text-gray-600">
-              Track your nutrition and stay healthy
-            </p>
-          </header> */}
-
           {renderContent()}
         </div>
       </main>

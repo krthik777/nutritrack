@@ -14,9 +14,8 @@ const Login = () => {
 
   useEffect(() => {
     if (user && isLogin) {
-      // Only set email in localStorage and navigate to /dashboard on login
-      localStorage.setItem('email', email);
-      navigate('/dashboard');
+      localStorage.setItem('email', email); // Set email in localStorage
+      navigate('/dashboard'); // Redirect to dashboard
     }
   }, [user, navigate, isLogin, email]);
 
@@ -42,11 +41,10 @@ const Login = () => {
           icon: 'info',
           confirmButtonText: 'OK',
         });
-        // setIsLogin(true); // Switch back to login page
         setEmail('');
         setPassword('');
         setConfirmPassword('');
-        navigate('/');
+        setIsLogin(true); // Switch back to login page
       }
     } catch (err) {
       // Error is handled by the store
