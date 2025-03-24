@@ -108,39 +108,39 @@ export function Profile() {
 
   if (!profile || isEditing) {
     return (
-      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-8">
-        <div className="flex items-center gap-6 mb-8">
-          <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
-            <User className="h-12 w-12 text-green-600" />
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-4 md:p-8">
+        <div className="flex items-center gap-4 md:gap-6 mb-4 md:mb-8">
+          <div className="w-16 h-16 md:w-24 md:h-24 bg-green-100 rounded-full flex items-center justify-center">
+            <User className="h-8 w-8 md:h-12 md:w-12 text-green-600" />
           </div>
-          <h3 className="text-2xl font-semibold text-gray-800">{profile ? "Edit Profile" : "Create Profile"}</h3>
+          <h3 className="text-xl md:text-2xl font-semibold text-gray-800">{profile ? "Edit Profile" : "Create Profile"}</h3>
         </div>
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-8">
           {["name", "phone", "location", "height", "weight"].map((field) => (
             <div key={field}>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">
                 {field.charAt(0).toUpperCase() + field.slice(1)}
               </label>
               <input
                 type="text"
                 value={profile?.[field as keyof ProfileData] || ""}
                 onChange={(e) => setProfile({ ...profile!, [field]: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                className="w-full px-3 py-2 md:px-4 md:py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
                 required
               />
             </div>
           ))}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-            <input type="text" value={email || ""} disabled className="w-full px-4 py-2 border rounded-lg bg-gray-200 cursor-not-allowed" />
+            <label className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">Email</label>
+            <input type="text" value={email || ""} disabled className="w-full px-3 py-2 md:px-4 md:py-2 border rounded-lg bg-gray-200 cursor-not-allowed" />
           </div>
           {[{ label: "Goals", value: newGoal, setter: setNewGoal, type: "goals" },
             { label: "Dietary Preferences", value: newPreference, setter: setNewPreference, type: "dietaryPreferences" }].map(({ label, value, setter, type }) => (
-            <div key={type} className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+            <div key={type} className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1 md:mb-2">{label}</label>
               <div className="flex gap-2">
-                <input type="text" value={value} onChange={(e) => setter(e.target.value)} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
-                <button type="button" onClick={() => handleAddItem(type as "goals" | "dietaryPreferences", value)} className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <input type="text" value={value} onChange={(e) => setter(e.target.value)} className="w-full px-3 py-2 md:px-4 md:py-2 border rounded-lg focus:ring-2 focus:ring-green-500" />
+                <button type="button" onClick={() => handleAddItem(type as "goals" | "dietaryPreferences", value)} className="bg-green-600 text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-green-700">
                   <Plus className="h-5 w-5 inline" />
                 </button>
               </div>
