@@ -11,7 +11,6 @@ import {
 } from "recharts";
 import { Navigate } from "react-router-dom";
 
-
 interface Meal {
   id: string;
   name: string;
@@ -76,8 +75,7 @@ export function DashboardCont() {
     const fetchData = async () => {
       try {
         const email = localStorage.getItem("email");
-        if (!email) 
-          return;
+        if (!email) return;
 
         const url = import.meta.env.VITE_BACKEND_URL;
         const [mealsResponse, weeklyResponse] = await Promise.all([
@@ -137,22 +135,24 @@ export function DashboardCont() {
     fetchData();
   }, []);
 
-  const totalMacros = nutritionSummary.protein + nutritionSummary.carbs + nutritionSummary.fat;
+  const totalMacros =
+    nutritionSummary.protein + nutritionSummary.carbs + nutritionSummary.fat;
   const macroDistribution = [
-    { 
-      name: 'Protein', 
-      value: totalMacros > 0 ? (nutritionSummary.protein / totalMacros) * 100 : 0,
-      color: '#3B82F6'  // Changed from #10B981 to more vibrant blue
+    {
+      name: "Protein",
+      value:
+        totalMacros > 0 ? (nutritionSummary.protein / totalMacros) * 100 : 0,
+      color: "#3B82F6", // Changed from #10B981 to more vibrant blue
     },
-    { 
-      name: 'Carbs', 
+    {
+      name: "Carbs",
       value: totalMacros > 0 ? (nutritionSummary.carbs / totalMacros) * 100 : 0,
-      color: '#10B981'  // Changed from #3B82F6 to teal green
+      color: "#10B981", // Changed from #3B82F6 to teal green
     },
-    { 
-      name: 'Fat', 
+    {
+      name: "Fat",
       value: totalMacros > 0 ? (nutritionSummary.fat / totalMacros) * 100 : 0,
-      color: '#F59E0B' 
+      color: "#F59E0B",
     },
   ];
 
@@ -171,7 +171,7 @@ export function DashboardCont() {
               <X className="h-6 w-6" />
             </button>
           </div>
-
+          
           {selectedGraph === "Macronutrients" && (
             <div className="h-96">
               <div className="grid grid-cols-3 gap-4 mb-4">
@@ -186,28 +186,28 @@ export function DashboardCont() {
                   </div>
                 ))}
               </div>
-              <div className="relative w-full h-64">
-  {macroDistribution.map((macro, index) => {
-    const accumulated = macroDistribution
-      .slice(0, index)
-      .reduce((acc, cur) => acc + cur.value, 0);
-    const rotation = accumulated * 3.6; // Convert percentage to degrees
-    
-    return (
-      <div
-        key={macro.name}
-        className="absolute h-64 w-64 rounded-full border-8"
-        style={{
-          borderColor: macro.color,
-          transform: `rotate(${rotation}deg)`,
-          clipPath: 'inset(0 50% 0 0)',
-        }}
-      />
-    );
-  })}
-</div>
+              <div className="flex items-center justify-center">
+                <div className="relative w-64 h-64">
+                  <div
+                    className="w-full h-full rounded-full"
+                    style={{
+                      background: `conic-gradient(
+              ${macroDistribution
+                .map((macro, i) => {
+                  const start = macroDistribution
+                    .slice(0, i)
+                    .reduce((acc, m) => acc + m.value, 0);
+                  return `${macro.color} ${start}% ${start + macro.value}%`;
+                })
+                .join(", ")})`,
+                    }}
+                  />
+                  <div className="absolute inset-2 bg-white rounded-full shadow-sm" />
+                </div>
+              </div>
             </div>
           )}
+
 
           {selectedGraph === "Weekly Progress" && (
             <div className="h-96">
