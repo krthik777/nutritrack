@@ -76,11 +76,13 @@ export function DashboardCont() {
     const fetchData = async () => {
       try {
         const email = localStorage.getItem("email");
-        if (!email) return;
+        if (!email) 
+          return;
 
+        const url = import.meta.env.VITE_BACKEND_URL;
         const [mealsResponse, weeklyResponse] = await Promise.all([
-          fetch(`http://localhost:5000/api/foodlog?email=${email}`),
-          fetch(`http://localhost:5000/api/weeklycalo?email=${email}`),
+          fetch(`${url}/api/foodlog?email=${email}`),
+          fetch(`${url}/api/weeklycalo?email=${email}`),
         ]);
 
         if (!mealsResponse.ok || !weeklyResponse.ok) {
