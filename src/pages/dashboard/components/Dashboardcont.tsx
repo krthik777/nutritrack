@@ -105,7 +105,16 @@ export function DashboardCont() {
           timestamp: new Date(meal.timestamp),
         }));
 
-        const summary = mealsData.reduce(
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todaysMeals = transformedMeals.filter((meal: { timestamp: string | number | Date; }) => {
+          const mealDate = new Date(meal.timestamp);
+          mealDate.setHours(0, 0, 0, 0);
+          return mealDate.getTime() === today.getTime();
+        });
+
+        const summary = todaysMeals.reduce(
           (acc: any, meal: any) => ({
             calories: acc.calories + (Number(meal.calories) || 0),
             protein: acc.protein + (Number(meal.protein) || 0),
@@ -116,6 +125,7 @@ export function DashboardCont() {
           { calories: 0, protein: 0, carbs: 0, fat: 0, target: 2000 }
         );
 
+        // Update the state with this filtered summary
         setNutritionSummary({
           calories: summary.calories,
           protein: Math.round(summary.protein),
@@ -171,7 +181,7 @@ export function DashboardCont() {
               <X className="h-6 w-6" />
             </button>
           </div>
-          
+
           {selectedGraph === "Macronutrients" && (
             <div className="h-96">
               <div className="grid grid-cols-3 gap-4 mb-4">
@@ -207,7 +217,6 @@ export function DashboardCont() {
               </div>
             </div>
           )}
-
 
           {selectedGraph === "Weekly Progress" && (
             <div className="h-96">
