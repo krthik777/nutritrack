@@ -78,6 +78,4 @@ NutriTrack is designed to make nutrition tracking effortless. Leveraging AI (Gem
 
 
 
-## 🌐 Live Demo (Coming Soon)
 
-Stay tuned for a deployed version of NutriTrack!
